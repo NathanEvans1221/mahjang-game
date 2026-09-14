@@ -192,6 +192,59 @@ describe('Game 流程', () => {
     expect(p.hand.length).toBe(before + 1);
   });
 
+  it('莊家胡牌連莊、閒家胡牌下莊', () => {
+    const g = new Game();
+    g.startNewGame();
+    const dealer0 = g.dealer;
+    const dealer = g.players[dealer0];
+    dealer.hand = [new Tile('wan', 1)];
+    g.handleWin(dealer, null, true);
+    expect(g.consecutiveWins).toBe(1);
+    expect(g.dealer).toBe(dealer0);
+
+    const g2 = new Game();
+    g2.startNewGame();
+    const d0 = g2.dealer;
+    const other = g2.players[(d0 + 1) % 4];
+    other.hand = [new Tile('wan', 1)];
+    g2.handleWin(other, null, true);
+    expect(g2.consecutiveWins).toBe(0);
+    expect(g2.dealer).toBe((d0 + 1) % 4);
+  });
+
+  it('流局莊家連莊、開新局沿用莊家', () => {
+    const g = new Game();
+    g.startNewGame();
+    const dealer0 = g.dealer;
+    g.handleDraw();
+    expect(g.consecutiveWins).toBe(1);
+    expect(g.dealer).toBe(dealer0);
+    g.startNewGame();
+    expect(g.dealer).toBe(dealer0);
+    expect(g.consecutiveWins).toBe(1);
+  });
+
+  it('結算：自摸三家賠、放槍上家賠', () => {
+    const g = new Game();
+    g.startNewGame();
+    const p = g.players[0];
+    p.hand = [new Tile('wan', 1)];
+    let lines = null;
+    g.showWinDialog = (name, result, settle) => { lines = settle; };
+    g.handleWin(p, null, true);
+    expect(lines).toHaveLength(3);
+
+    const g2 = new Game();
+    g2.startNewGame();
+    const q = g2.players[1];
+    q.hand = [new Tile('wan', 1)];
+    let lines2 = null;
+    g2.showWinDialog = (name, result, settle) => { lines2 = settle; };
+    g2.handleWin(q, new Tile('wan', 2), false);
+    expect(lines2).toHaveLength(1);
+    expect(lines2[0]).toContain(g2.players[0].name);
+  });
+
   it('中央資訊區與計分條節點生成', () => {
     const g = new Game();
     g.startNewGame();
@@ -211,8 +264,7 @@ describe('Game 流程', () => {
     expect(seen).toContain('#score-bar');
   });
 
-  it('玩家區帶方位座位 class', () => {
-    const g = new Game();
+  it('玩家區帶方位座位 class', () => {    const g = new Game();
     g.startNewGame();
     const added = [];
     const fakeArea = {
@@ -261,5 +313,32 @@ describe('Game 流程', () => {
       globalThis.document.getElementById = origGet;
     }
     expect(appended.length).toBe(3 + 3 + 4);
+  });
+
+  it('聽牌時顯示提示', () => {
+    const g = new Game();
+    g.startNewGame();
+    const p = g.players[0];
+    p.hand = [];
+    [1, 2, 3, 4, 5, 6, 7, 8, 9].forEach((v) => p.hand.push(new Tile('wan', v)));
+    [1, 1, 1].forEach((v) => p.hand.push(new Tile('tiao', v)));
+    [5, 5].forEach((v) => p.hand.push(new Tile('tong', v)));
+    [2, 2].forEach((v) => p.hand.push(new Tile('tiao', v)));
+    expect(p.hand).toHaveLength(16);
+    g.currentPlayer = 0;
+    g.lastDiscard = null;
+    g.lastDraw = null;
+    g.state = 'playing';
+    let turnText = '';
+    const origQuery = globalThis.document.querySelector;
+    globalThis.document.querySelector = (sel) => sel === '#center-turn'
+      ? { set textContent(v) { turnText = v; }, get textContent() { return turnText; } }
+      : origQuery(sel);
+    try {
+      g.playTurn();
+    } finally {
+      globalThis.document.querySelector = origQuery;
+    }
+    expect(turnText).toContain('聽牌');
   });
 });

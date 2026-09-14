@@ -72,6 +72,8 @@ console.log('[Game] 載入中...');
             this.lastDraw = null;
             /** @type {Player} 胡牌玩家 */
             this.winner = null;
+            /** @type {number} 已進行局數（首局隨機莊，其後沿用輪莊結果） */
+            this.roundsPlayed = 0;
             /** @type {Object} 使用者設定：速度與動畫 */
             this.settings = { speed: 'normal', animations: true };
 
@@ -255,9 +257,12 @@ console.log('[Game] 載入中...');
             this.players.forEach(p => p.reset());
             Logger.log('玩家重置完成');
 
-            this.dealer = Math.floor(Math.random() * 4);
+            if (this.roundsPlayed === 0) {
+                this.dealer = Math.floor(Math.random() * 4);
+                this.consecutiveWins = 0;
+            }
+            this.roundsPlayed++;
             this.currentPlayer = this.dealer;
-            this.consecutiveWins = 0;
             this.winner = null;
 
             Logger.log(`莊家: ${PlayerDirection[this.dealer]} (${this.dealer})`);
@@ -345,6 +350,8 @@ console.log('[Game] 載入中...');
         Logger.log(`回合開始: ${player.name} (${PlayerDirection[this.currentPlayer]})`);
 
         if (player.isHuman) {
+            // 摸牌前先判斷是否聽牌（16 張待摸），用於回合提示
+            const wasReady = player.canReady();
             // 人類回合：無待處理棄牌時先摸牌（手牌 16→17）；已有 17 張則直接打牌
             if (!this.lastDiscard) {
                 const total = player.hand.length + this.meldTileCount(player);
@@ -367,6 +374,7 @@ console.log('[Game] 載入中...');
             Logger.log('玩家回合，啟用動作按鈕');
             this.updateUI();
             this.enableHumanActions();
+            this.updateReadyHint(player, wasReady);
         } else {
             Logger.log('AI 回合思考中...');
             this.showLoading();
@@ -490,7 +498,7 @@ console.log('[Game] 載入中...');
         Logger.log('動作按鈕已禁用');
     }
 
-    showWinDialog(winnerName, result) {
+    showWinDialog(winnerName, result, settleLines = []) {
         Logger.log('顯示胡牌對話框', { winner: winnerName, result });
 
         const modal = document.getElementById('modal');
@@ -506,11 +514,15 @@ console.log('[Game] 載入中...');
             ? `😐 流局`
             : `🎉 ${winnerName} 胡牌!`;
         const detailsHtml = result.details.map(d => `<p>${d}</p>`).join('');
+        const settleHtml = settleLines.length > 0
+            ? `<hr>${settleLines.map(l => `<p>${l}</p>`).join('')}`
+            : '';
         message.innerHTML = `
             <p><strong>台數: ${result.fans} 台</strong></p>
             <p><strong>分數: ${result.points}</strong></p>
             <hr>
             ${detailsHtml}
+            ${settleHtml}
         `;
 
         modal.classList.remove('hidden');
@@ -552,7 +564,26 @@ console.log('[Game] 載入中...');
     renderScoreBar() {
         const bar = document.querySelector('#score-bar');
         if (!bar) return;
-        bar.textContent = this.players.map(p => p.name).join('｜');
+        const names = this.players.map(p => p.name).join('｜');
+        bar.textContent = this.consecutiveWins > 0
+            ? `${names}｜連莊 x${this.consecutiveWins}`
+            : names;
+    }
+
+    /**
+     * 聽牌提示：摸牌前已聽牌時，在回合資訊後標註
+     * @method updateReadyHint
+     * @param {Player} player - 人類玩家
+     * @param {boolean} wasReady - 摸牌前是否聽牌
+     */
+    updateReadyHint(player, wasReady) {
+        if (!wasReady) return;
+        const turn = document.querySelector('#center-turn');
+        if (!turn) return;
+        if (!turn.textContent.includes('聽牌')) {
+            turn.textContent += '（聽牌）';
+        }
+        Logger.log('聽牌提示', { player: player.name });
     }
 
     renderPlayers() {
@@ -604,8 +635,27 @@ console.log('[Game] 載入中...');
         );
 
         Logger.log('胡牌結果', result);
-        this.showWinDialog(player.name, result);
+
+        // 結算：自摸由三家賠；放槍由放槍者賠（本引擎放槍者為胡牌者的上家）
+        let losers;
+        if (isSelfDraw) {
+            losers = this.players.filter(p => p !== player);
+        } else {
+            losers = [this.players[(player.id + 3) % 4]];
+        }
+        const settle = Scoring.settle(player, losers, result);
+        const settleLines = settle.map(s => `${s.loser} → ${s.winner}：${s.points} 分`);
+
+        this.showWinDialog(player.name, result, settleLines);
         this.state = GameState.ROUND_END;
+
+        // 輪莊：莊家胡（含天胡）或流局連莊；閒家胡則下莊
+        if (player.isDealer) {
+            this.consecutiveWins++;
+        } else {
+            this.dealer = (this.dealer + 1) % 4;
+            this.consecutiveWins = 0;
+        }
     }
 
     /**
@@ -615,6 +665,8 @@ console.log('[Game] 載入中...');
     handleDraw() {
         Logger.log('========== 流局 ==========');
         this.state = GameState.ROUND_END;
+        // 流局莊家連莊
+        this.consecutiveWins++;
         this.showWinDialog('無人', { fans: 0, points: 0, details: ['流局（牌牆見底）'] });
     }
 
