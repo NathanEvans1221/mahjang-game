@@ -40,9 +40,12 @@ describe('TileSet', () => {
     expect(ts.tiles.filter((t) => t.isHonor()).length).toBe(28);
   });
 
-  it('Tile equals/toString', () => {
+  it('Tile equals/toString（含花色）', () => {
     expect(new Tile(TileType.WAN, 1).equals(new Tile(TileType.WAN, 1))).toBe(true);
     expect(new Tile(TileType.WAN, 1).equals(new Tile(TileType.WAN, 2))).toBe(false);
+    expect(new Tile(TileType.WAN, 3).toString()).toBe('3萬');
+    expect(new Tile(TileType.TIAO, 5).toString()).toBe('5條');
+    expect(new Tile(TileType.TONG, 9).toString()).toBe('9筒');
     expect(new Tile(TileType.ZI, 'east').toString()).toBe('東');
     expect(new Tile(TileType.HUA, 'spring').toString()).toBe('春');
   });

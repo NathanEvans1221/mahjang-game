@@ -181,12 +181,13 @@ describe('Game 流程', () => {
     g.startNewGame();
     const p = g.players[0];
     const before = p.hand.length;
+    const flowersBefore = p.flowers.length;
     g.tileSet.tiles = [new Tile('hua', 'spring'), new Tile('wan', 1), new Tile('wan', 2)];
     g.tileSet.index = 0;
     const drawn = g.drawWithReplacement(p);
     expect(drawn).not.toBeNull();
     expect(drawn.type).toBe('wan');
-    expect(p.flowers).toHaveLength(1);
+    expect(p.flowers).toHaveLength(flowersBefore + 1);
     expect(p.hand.length).toBe(before + 1);
   });
 });

@@ -36,8 +36,14 @@ export class Tile {
     }
 
     toString() {
-        if (this.type === TileType.WAN || this.type === TileType.TIAO || this.type === TileType.TONG) {
-            return this.value;
+        if (this.type === TileType.WAN) {
+            return `${this.value}萬`;
+        }
+        if (this.type === TileType.TIAO) {
+            return `${this.value}條`;
+        }
+        if (this.type === TileType.TONG) {
+            return `${this.value}筒`;
         }
         if (this.type === TileType.ZI) {
             return ZI_NAMES[this.value] || this.value;
