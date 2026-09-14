@@ -1,0 +1,16 @@
+{
+  "name": "mahjang-game",
+  "version": "1.2.0",
+  "description": "台灣 16 張麻將網頁版",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview",
+    "test": "vitest run"
+  },
+  "devDependencies": {
+    "vite": "^6.3.5",
+    "vitest": "^3.1.3"
+  }
+}

@@ -43,6 +43,21 @@
         </div>
     </div>
 
+    <div id="settings-modal" class="modal hidden">
+        <div class="modal-content settings-content">
+            <h2>設定</h2>
+            <label class="settings-row">遊戲速度
+                <select id="setting-speed">
+                    <option value="slow">慢</option>
+                    <option value="normal" selected>一般</option>
+                    <option value="fast">快</option>
+                </select>
+            </label>
+            <label class="settings-row"><input type="checkbox" id="setting-anim" checked> 啟用動畫</label>
+            <button id="settings-close">關閉</button>
+        </div>
+    </div>
+
     <div id="loading-overlay" class="hidden">
         <div class="loading-spinner"></div>
         <div class="loading-text">電腦思考中...</div>
@@ -61,13 +76,7 @@
         <div class="tile"></div>
     </template>
 
-    <script src="js/init.js"></script>
-    <script src="js/tiles.js"></script>
-    <script src="js/player.js"></script>
-    <script src="js/ai.js"></script>
-    <script src="js/scoring.js"></script>
-    <script src="js/game.js"></script>
-    <script src="js/app.js"></script>
+    <script type="module" src="js/app.js"></script>
 </body>
 
 </html>

@@ -3,12 +3,19 @@
 // AI 電腦玩家決策邏輯
 // ===========================================
 
-class AIPlayer extends Player {
+import { Player } from './player.js';
+import { TileType } from './tiles.js';
+
+export class AIPlayer extends Player {
     constructor(id, name) {
         super(id, name, false);
     }
 
     decide(tile, game) {
+        if (!tile) {
+            return { action: 'discard', tile: this.chooseDiscard(game) };
+        }
+
         if (this.canWin(tile)) {
             return { action: 'win', tile: tile };
         }
@@ -24,7 +31,7 @@ class AIPlayer extends Player {
             }
         }
 
-        if (tile && this.canChow(tile, game.getPrevPlayer(this.id))) {
+        if (tile && this.canChow(tile, game.getPrevPlayer(this.id).id)) {
             const chowValue = this.evaluateChow(tile, game);
             if (chowValue > 0) {
                 return { action: 'chow', tile: tile };
@@ -165,14 +172,15 @@ class AIPlayer extends Player {
     }
 
     decideAfterDraw(tile, game) {
-        this.drawTile(tile);
+        // tile 已由呼叫端摸起並加入手牌，此處僅決策不再重複 drawTile
+        // （tile 為 null 表示已多一張不需再摸，如開局莊家 / 吃碰後）
         this.sortHand();
 
-        if (this.canWin(tile)) {
+        if (tile && this.canWin(tile)) {
             return { action: 'win', tile: tile };
         }
 
-        if (this.canKong(tile, true)) {
+        if (tile && this.canKong(tile, true)) {
             return { action: 'kong', tile: tile };
         }
 

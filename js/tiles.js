@@ -3,7 +3,7 @@
 // 牌組管理：洗牌、發牌、補牌
 // ===========================================
 
-const TileType = {
+export const TileType = {
     WAN: 'wan',
     TIAO: 'tiao',
     TONG: 'tong',
@@ -11,7 +11,7 @@ const TileType = {
     HUA: 'hua'
 };
 
-const TileValue = {
+export const TileValue = {
     WAN: [1, 2, 3, 4, 5, 6, 7, 8, 9],
     TIAO: [1, 2, 3, 4, 5, 6, 7, 8, 9],
     TONG: [1, 2, 3, 4, 5, 6, 7, 8, 9],
@@ -19,17 +19,17 @@ const TileValue = {
     HUA: ['spring', 'summer', 'autumn', 'winter', 'plum', 'orchid', 'bamboo', 'chrysanthemum']
 };
 
-const ZI_NAMES = {
+export const ZI_NAMES = {
     east: '東', south: '南', west: '西', north: '北',
     zhong: '中', fa: '發', bai: '白'
 };
 
-const HUA_NAMES = {
+export const HUA_NAMES = {
     spring: '春', summer: '夏', autumn: '秋', winter: '冬',
     plum: '梅', orchid: '蘭', bamboo: '竹', chrysanthemum: '菊'
 };
 
-class Tile {
+export class Tile {
     constructor(type, value) {
         this.type = type;
         this.value = value;
@@ -61,11 +61,12 @@ class Tile {
     }
 }
 
-class TileSet {
+export class TileSet {
     constructor() {
         this.tiles = [];
         this.index = 0;
         this.createTiles();
+        this.shuffle();
     }
 
     createTiles() {

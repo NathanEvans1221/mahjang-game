@@ -14,4 +14,6 @@ resources/.arch-internal-preview.css
 .arch-internal-preview.css
 
 .python-version
+node_modules/
+dist/
 
