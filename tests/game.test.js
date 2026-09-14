@@ -99,4 +99,94 @@ describe('Game 流程', () => {
       g.closeSettings();
     }).not.toThrow();
   });
+
+  it('碰牌登記副露並換手', () => {
+    const g = new Game();
+    g.startNewGame();
+    const p = g.players[1];
+    p.hand = [new Tile('tong', 7), new Tile('tong', 7)];
+    while (p.hand.length < 16) p.hand.push(new Tile('wan', 1));
+    g.handlePong(p, new Tile('tong', 7));
+    expect(p.melds).toHaveLength(1);
+    expect(p.melds[0].type).toBe('pong');
+    expect(p.hand).toHaveLength(14);
+    expect(g.currentPlayer).toBe(1);
+    expect(g.lastDiscard).toBeNull();
+    expect(p.hasDrawn).toBe(true);
+  });
+
+  it('槓牌登記副露並補牌', async () => {
+    const g = new Game();
+    g.startNewGame();
+    const p = g.players[1];
+    p.hand = [new Tile('tong', 7), new Tile('tong', 7), new Tile('tong', 7)];
+    while (p.hand.length < 16) p.hand.push(new Tile('wan', 1));
+    g.handleKong(p, new Tile('tong', 7));
+    expect(p.melds).toHaveLength(1);
+    expect(p.melds[0].type).toBe('kong');
+    // 槓後決策為非同步，等待完成不斷言崩潰
+    await new Promise((r) => setTimeout(r, 800));
+    expect(p.melds).toHaveLength(1);
+  }, 10000);
+
+  it('自摸與放槍計分不同', () => {
+    const g = new Game();
+    g.startNewGame();
+    const p = g.players[0];
+    p.hand = [new Tile('wan', 1)];
+    const ronTile = new Tile('wan', 2);
+    g.lastDiscard = ronTile;
+    g.executeAction(p, { action: 'win', tile: ronTile });
+    expect(g.state).toBe('round_end');
+  });
+
+  it('放槍不計自摸、天胡開局有明細', () => {
+    const g = new Game();
+    g.startNewGame();
+    const p = g.players[0];
+    p.hand = [new Tile('wan', 1)];
+    // 放槍：tile 即 lastDiscard
+    const ronTile = new Tile('wan', 2);
+    g.lastDiscard = ronTile;
+    let captured = null;
+    const orig = g.showWinDialog.bind(g);
+    g.showWinDialog = (name, result) => { captured = result; };
+    g.executeAction(p, { action: 'win', tile: ronTile });
+    expect(captured.details.join()).not.toContain('自摸');
+    g.showWinDialog = orig;
+
+    // 天胡：開局無棄牌無副露＋莊家自摸
+    const g2 = new Game();
+    g2.startNewGame();
+    const dealer = g2.players[g2.dealer];
+    dealer.hand = [new Tile('wan', 1)];
+    let captured2 = null;
+    g2.showWinDialog = (name, result) => { captured2 = result; };
+    g2.handleWin(dealer, null, true);
+    expect(captured2.details.join()).toContain('天胡');
+  });
+
+  it('流局結束本局', () => {
+    const g = new Game();
+    g.startNewGame();
+    let captured = null;
+    g.showWinDialog = (name, result) => { captured = result; };
+    g.handleDraw();
+    expect(g.state).toBe('round_end');
+    expect(captured.details).toContain('流局（牌牆見底）');
+  });
+
+  it('摸牌花牌自動補牌', () => {
+    const g = new Game();
+    g.startNewGame();
+    const p = g.players[0];
+    const before = p.hand.length;
+    g.tileSet.tiles = [new Tile('hua', 'spring'), new Tile('wan', 1), new Tile('wan', 2)];
+    g.tileSet.index = 0;
+    const drawn = g.drawWithReplacement(p);
+    expect(drawn).not.toBeNull();
+    expect(drawn.type).toBe('wan');
+    expect(p.flowers).toHaveLength(1);
+    expect(p.hand.length).toBe(before + 1);
+  });
 });

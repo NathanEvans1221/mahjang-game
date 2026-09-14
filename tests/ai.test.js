@@ -49,4 +49,41 @@ describe('AIPlayer', () => {
     const d = ai.decide(T('tong', 5), fakeGame(0));
     expect(d.action).toBe('win');
   });
+
+  it('吃碰評估：刻子價值與順子潛力', () => {
+    const ai = new AIPlayer(1, 'ai');
+    ai.hand.push(T('wan', 5), T('wan', 5), T('wan', 5));
+    expect(ai.evaluatePong(T('wan', 5), fakeGame())).toBe(3);
+
+    const ai2 = new AIPlayer(1, 'ai');
+    ai2.hand.push(T('wan', 5), T('wan', 5), T('wan', 6));
+    // 有對又有靠張順子潛力 → 保留不碰
+    expect(ai2.evaluatePong(T('wan', 5), fakeGame())).toBe(1);
+
+    const ai3 = new AIPlayer(2, 'ai');
+    ai3.hand.push(T('wan', 1), T('wan', 2));
+    expect(ai3.evaluateChow(T('wan', 3), fakeGame())).toBe(2);
+  });
+
+  it('棄牌策略：優先打孤張字牌', () => {
+    const ai = new AIPlayer(1, 'ai');
+    ai.hand.push(T('wan', 5), T('wan', 5), T('zi', 'east'));
+    const d = ai.chooseDiscard(fakeGame());
+    expect(d.type).toBe('zi');
+    expect(d.value).toBe('east');
+  });
+
+  it('危險牌判斷：在外牌視為危險', () => {
+    const ai = new AIPlayer(1, 'ai');
+    const outs = [T('wan', 5)];
+    expect(ai.isTileDangerous(T('wan', 5), outs)).toBe(true);
+    expect(ai.isTileDangerous(T('wan', 6), outs)).toBe(false);
+  });
+
+  it('對子加牌可碰', () => {
+    const ai = new AIPlayer(1, 'ai');
+    ai.hand.push(T('tong', 7), T('tong', 7));
+    const d = ai.decide(T('tong', 7), fakeGame(0));
+    expect(d.action).toBe('pong');
+  });
 });

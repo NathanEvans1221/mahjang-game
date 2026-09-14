@@ -115,4 +115,34 @@ describe('Player 吃碰槓', () => {
     bad.hand.push(T('wan', 1), T('wan', 2));
     expect(bad.findWinGroups()).toBeNull();
   });
+
+  it('手牌基本操作：排序、移除、打出、重置', () => {
+    const p = new Player(0, 't', true);
+    p.hand.push(T('tong', 3), T('zi', 'east'), T('wan', 9), T('hua', 'spring'));
+    p.sortHand();
+    expect(p.hand.map((t) => t.type)).toEqual(['wan', 'tong', 'zi', 'hua']);
+
+    expect(p.removeTile(T('wan', 9))).toBe(true);
+    expect(p.removeTile(T('wan', 9))).toBe(false);
+    expect(p.getHandSize()).toBe(3);
+
+    p.hasDrawn = true;
+    expect(p.discardTile(T('tong', 3))).toBe(true);
+    expect(p.hasDrawn).toBe(false);
+    expect(p.getDiscardCount()).toBe(1);
+
+    p.addMelds({ type: 'pong', tiles: [] });
+    expect(p.getMelds()).toHaveLength(1);
+
+    p.reset();
+    expect(p.getHandSize()).toBe(0);
+    expect(p.getMelds()).toHaveLength(0);
+    expect(p.getDiscardCount()).toBe(0);
+  });
+
+  it('tryWin 支援暗槓四張', () => {
+    const p = new Player(0, 't', true);
+    const tiles = [T('wan', 1), T('wan', 1), T('wan', 1), T('wan', 1), T('tiao', 2), T('tiao', 2)];
+    expect(p.tryWin(tiles, 0, [], null, 1)).toBe(true);
+  });
 });

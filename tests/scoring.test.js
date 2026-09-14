@@ -99,6 +99,32 @@ describe('Scoring 番型', () => {
     expect(r.fans).toBe(10);
   });
 
+  it('settle 莊家相關加倍', () => {
+    const winner = { name: 'w', isDealer: true };
+    const loser = { name: 'l', isDealer: false };
+    const r1 = Scoring.settle(winner, [loser], { points: 4 });
+    expect(r1[0].points).toBe(8);
+    expect(r1[0].type).toBe('dealer');
+
+    const r2 = Scoring.settle(
+      { name: 'w', isDealer: false },
+      [{ name: 'l', isDealer: false }],
+      { points: 4 }
+    );
+    expect(r2[0].points).toBe(4);
+    expect(r2[0].type).toBe('normal');
+  });
+
+  it('小四喜 +4', () => {
+    const tiles = [];
+    ['east', 'south', 'west'].forEach((v) => [1, 2, 3].forEach(() => tiles.push(T('zi', v))));
+    [1, 2].forEach(() => tiles.push(T('zi', 'north')));
+    const r = calc(tiles);
+    expect(r.details.join()).toContain('小四喜');
+    // 門清1 + 自摸1 + 小四喜4 + 風刻3 = 9
+    expect(r.fans).toBe(9);
+  });
+
   it('小三元 +4（散刻另計）', () => {
     const tiles = [];
     ['zhong', 'fa'].forEach((v) => [1, 2, 3].forEach(() => tiles.push(T('zi', v))));
