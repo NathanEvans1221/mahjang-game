@@ -5,6 +5,7 @@ function makeEl() {
   return {
     disabled: true,
     textContent: '',
+    dataset: {},
     classList: { add() {}, remove() {} },
     addEventListener() {},
     innerHTML: '',
@@ -189,5 +190,76 @@ describe('Game 流程', () => {
     expect(drawn.type).toBe('wan');
     expect(p.flowers).toHaveLength(flowersBefore + 1);
     expect(p.hand.length).toBe(before + 1);
+  });
+
+  it('中央資訊區與計分條節點生成', () => {
+    const g = new Game();
+    g.startNewGame();
+    const seen = [];
+    const origQuery = globalThis.document.querySelector;
+    globalThis.document.querySelector = (sel) => {
+      seen.push(sel);
+      return null;
+    };
+    try {
+      g.renderTableCenter();
+      g.renderScoreBar();
+    } finally {
+      globalThis.document.querySelector = origQuery;
+    }
+    expect(seen).toContain('#table-center');
+    expect(seen).toContain('#score-bar');
+  });
+
+  it('玩家區帶方位座位 class', () => {
+    const g = new Game();
+    g.startNewGame();
+    const added = [];
+    const fakeArea = {
+      classList: { add: (c) => added.push(c) },
+      querySelector: () => ({ textContent: '' }),
+    };
+    const tpl = {
+      content: { cloneNode: () => ({ querySelector: () => fakeArea }) },
+    };
+    const origGet = globalThis.document.getElementById;
+    globalThis.document.getElementById = (id) =>
+      id === 'tpl-player-area' ? tpl : origGet(id);
+    try {
+      g.createPlayerArea(g.players[0]);
+    } finally {
+      globalThis.document.getElementById = origGet;
+    }
+    expect(added).toContain('table-seat');
+    expect(added).toContain('east');
+  });
+
+  it('副露區渲染吃碰槓', () => {
+    const g = new Game();
+    g.startNewGame();
+    const appended = [];
+    const meldDiv = { innerHTML: '', appendChild: (el) => appended.push(el) };
+    const area = {
+      querySelector: (sel) => {
+        if (sel === '.meld-area') return meldDiv;
+        return { innerHTML: '', appendChild: () => {} };
+      },
+    };
+    const tileTpl = { content: { cloneNode: () => ({ querySelector: () => ({ textContent: '', dataset: {}, classList: { add() {} } }) }) } };
+    const origGet = globalThis.document.getElementById;
+    globalThis.document.getElementById = (id) =>
+      id === 'tpl-tile' ? tileTpl : origGet(id);
+    try {
+      const p = g.players[1];
+      p.melds = [
+        { type: 'chow', tiles: [new Tile('wan', 1), new Tile('wan', 2), new Tile('wan', 3)] },
+        { type: 'pong', tiles: [new Tile('tong', 5), new Tile('tong', 5), new Tile('tong', 5)] },
+        { type: 'kong', tiles: [new Tile('zi', 'zhong'), new Tile('zi', 'zhong'), new Tile('zi', 'zhong'), new Tile('zi', 'zhong')] },
+      ];
+      g.updatePlayerArea(area, p);
+    } finally {
+      globalThis.document.getElementById = origGet;
+    }
+    expect(appended.length).toBe(3 + 3 + 4);
   });
 });

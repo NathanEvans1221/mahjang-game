@@ -19,10 +19,15 @@
         </header>
 
         <main id="game-board">
+            <div id="table-center">
+                <span id="center-tiles"></span>
+                <span id="center-turn"></span>
+            </div>
             <!-- 遊戲牌桌會在這裡渲染 -->
         </main>
 
         <footer id="action-bar">
+            <div id="score-bar"></div>
             <div class="action-buttons">
                 <button id="btn-chow" class="action-btn" disabled>吃</button>
                 <button id="btn-pong" class="action-btn" disabled>碰</button>
@@ -68,6 +73,7 @@
         <div class="player-area">
             <div class="player-name"></div>
             <div class="player-hand"></div>
+            <div class="meld-area"></div>
             <div class="discard-pile"></div>
         </div>
     </template>

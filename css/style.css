@@ -18,6 +18,11 @@
     --gold: #FFD700;
     --error: #C73E3A;
     --success: #4CAF50;
+    --felt: #0B5D3B;
+    --felt-dark: #08422A;
+    --tile-face: #FFFDF5;
+    --suit-tiao: #1B7A3D;
+    --suit-tong: #1D4ED8;
 }
 
 body {
@@ -64,6 +69,36 @@ header h1 {
     flex-direction: column;
     padding: 1rem;
     position: relative;
+    background: radial-gradient(circle at 50% 40%, var(--felt), var(--felt-dark));
+}
+
+/* 四方桌座位 */
+.table-seat {
+    padding: 0.5rem;
+    border-radius: 8px;
+}
+
+.table-seat.south {
+    text-align: center;
+}
+
+.table-seat.north {
+    text-align: center;
+}
+
+/* 中央資訊區與計分條 */
+#table-center {
+    text-align: center;
+    color: #fff;
+    padding: 0.5rem;
+    display: flex;
+    justify-content: center;
+    gap: 1.5rem;
+}
+
+#score-bar {
+    color: var(--text);
+    font-size: 0.9rem;
 }
 
 #action-bar {
@@ -146,7 +181,7 @@ header h1 {
 .tile {
     width: 40px;
     height: 56px;
-    background: white;
+    background: linear-gradient(180deg, #ffffff 0%, var(--tile-face) 70%, #E8E0C8 100%);
     border: 1px solid #ccc;
     border-radius: 4px;
     display: inline-flex;
@@ -159,6 +194,7 @@ header h1 {
     touch-action: manipulation;
     -webkit-tap-highlight-color: transparent;
     user-select: none;
+    box-shadow: 0 2px 0 #B9AE8E, 0 4px 6px rgba(0,0,0,0.35);
 }
 
 .tile:hover {
@@ -172,8 +208,30 @@ header h1 {
 }
 
 .tile-back {
-    background: var(--tile-back);
+    background:
+        repeating-linear-gradient(45deg, #324A5F 0 6px, #3D5A75 6px 12px);
     color: white;
+}
+
+/* 花色配色（JS 設定 data-suit） */
+.tile[data-suit="tiao"] {
+    color: var(--suit-tiao);
+}
+
+.tile[data-suit="tong"] {
+    color: var(--suit-tong);
+}
+
+/* 副露牌 */
+.tile-meld {
+    opacity: 0.95;
+}
+
+.meld-area {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    padding: 0.25rem 0;
 }
 
 /* Player areas */
@@ -249,6 +307,56 @@ header h1 {
     text-shadow: 0 2px 4px rgba(0,0,0,0.3);
 }
 
+/* ===== 動效 ===== */
+
+/* 出牌滑入 */
+@keyframes tile-in {
+    from { transform: translateY(-10px); opacity: 0.3; }
+    to { transform: translateY(0); opacity: 1; }
+}
+
+.discard-pile .tile:last-child {
+    animation: tile-in 0.25s ease-out;
+}
+
+/* 摸牌高亮 */
+@keyframes draw-flash {
+    0% { outline: 3px solid var(--gold); }
+    100% { outline: 3px solid transparent; }
+}
+
+.tile-just-drawn {
+    animation: draw-flash 0.8s ease-out 1;
+}
+
+/* 可行動按鈕呼吸燈 */
+@keyframes btn-breathe {
+    0%, 100% { box-shadow: 0 0 0 rgba(232,170,66,0); }
+    50% { box-shadow: 0 0 12px rgba(232,170,66,0.9); }
+}
+
+.action-btn:not(:disabled) {
+    animation: btn-breathe 1.6s ease-in-out infinite;
+}
+
+/* 胡牌彈出 */
+@keyframes win-pop {
+    from { transform: scale(0.8); opacity: 0; }
+    to { transform: scale(1); opacity: 1; }
+}
+
+.modal:not(.hidden) .modal-content {
+    animation: win-pop 0.3s ease-out;
+}
+
+/* 動畫開關擴充 */
+body.no-anim .discard-pile .tile:last-child,
+body.no-anim .tile-just-drawn,
+body.no-anim .action-btn:not(:disabled),
+body.no-anim .modal:not(.hidden) .modal-content {
+    animation: none;
+}
+
 /* Settings modal */
 .settings-content {
     text-align: left;
@@ -309,6 +417,12 @@ body.no-anim .loading-spinner {
         height: 42px;
         font-size: 0.95rem;
         margin: 1px;
+    }
+
+    .table-seat.south .player-hand {
+        display: flex;
+        overflow-x: auto;
+        padding-bottom: 0.25rem;
     }
 
     .discard-pile {

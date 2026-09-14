@@ -352,6 +352,7 @@ console.log('[Game] 載入中...');
                     const drawn = this.drawWithReplacement(player);
                     if (drawn) {
                         this.lastDraw = drawn;
+                        this.lastDrawMarked = false;
                         player.sortHand();
                         Logger.log(`玩家摸牌: ${drawn.toString()}`);
                     } else {
@@ -529,9 +530,29 @@ console.log('[Game] 載入中...');
             }
 
             this.renderPlayers();
+            this.renderTableCenter();
+            this.renderScoreBar();
         } catch (err) {
             Logger.error('更新UI失敗', err);
         }
+    }
+
+    renderTableCenter() {
+        const center = document.querySelector('#table-center');
+        if (!center) return;
+        const tiles = document.querySelector('#center-tiles');
+        if (tiles) tiles.textContent = `剩餘牌數: ${this.tileSet.remaining()}`;
+        const turn = document.querySelector('#center-turn');
+        if (turn) {
+            const p = this.players[this.currentPlayer];
+            turn.textContent = `輪到：${p.name}${p.isDealer ? '（莊）' : ''}`;
+        }
+    }
+
+    renderScoreBar() {
+        const bar = document.querySelector('#score-bar');
+        if (!bar) return;
+        bar.textContent = this.players.map(p => p.name).join('｜');
     }
 
     renderPlayers() {
@@ -789,6 +810,7 @@ console.log('[Game] 載入中...');
         const fragment = template.content.cloneNode(true);
         const area = fragment.querySelector('.player-area');
 
+        area.classList.add('table-seat');
         area.classList.add(player.direction);
         area.querySelector('.player-name').textContent = player.name;
 
@@ -807,6 +829,11 @@ console.log('[Game] 載入中...');
 
             if (player.isHuman) {
                 tileEl.textContent = tile.toString();
+                tileEl.dataset.suit = tile.type;
+                if (this.lastDraw && !this.lastDrawMarked && tile.equals(this.lastDraw)) {
+                    tileEl.classList.add('tile-just-drawn');
+                    this.lastDrawMarked = true;
+                }
                 tileEl.addEventListener('click', () => {
                     // 兩段式出牌：第一下選取（反饋），第二下確認打出
                     if (tileEl.classList.contains('selected')) {
@@ -830,6 +857,21 @@ console.log('[Game] 載入中...');
             tileEl.textContent = tile.toString();
             discardsDiv.appendChild(tileEl);
         });
+
+        const meldDiv = area.querySelector('.meld-area');
+        if (meldDiv) {
+            meldDiv.innerHTML = '';
+            player.melds.forEach(meld => {
+                meld.tiles.forEach(tile => {
+                    const fragment = tileTemplate.content.cloneNode(true);
+                    const tileEl = fragment.querySelector('.tile');
+                    tileEl.textContent = tile.toString();
+                    tileEl.dataset.suit = tile.type;
+                    tileEl.classList.add('tile-meld');
+                    meldDiv.appendChild(tileEl);
+                });
+            });
+        }
     }
 
     handleHumanDiscard(tile) {
@@ -849,6 +891,7 @@ console.log('[Game] 載入中...');
                     return;
                 }
                 this.lastDraw = drawn;
+                this.lastDrawMarked = false;
                 this.updateUI();
             } else {
                 player.hasDrawn = true;
@@ -858,6 +901,7 @@ console.log('[Game] 載入中...');
         player.discardTile(tile);
         this.lastDiscard = tile;
         this.lastDraw = null;
+        this.lastDrawMarked = false;
 
         this.updateUI();
         this.nextPlayer();
